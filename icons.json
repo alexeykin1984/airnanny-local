@@ -1,0 +1,41 @@
+{
+  "entity": {
+    "sensor": {
+      "co2": {
+        "default": "mdi:molecule-co2"
+      }
+    },
+    "binary_sensor": {
+      "no_water": {
+        "default": "mdi:water-check",
+        "state": {
+          "on": "mdi:water-alert"
+        }
+      }
+    },
+    "switch": {
+      "night_mode": {
+        "default": "mdi:weather-night"
+      },
+      "damper": {
+        "default": "mdi:valve-closed",
+        "state": {
+          "on": "mdi:valve-open"
+        }
+      }
+    },
+    "number": {
+      "fan_speed": {
+        "default": "mdi:fan"
+      },
+      "humidity": {
+        "default": "mdi:water-percent"
+      }
+    },
+    "climate": {
+      "breezer": {
+        "default": "mdi:air-purifier"
+      }
+    }
+  }
+}

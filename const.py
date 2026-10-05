@@ -1,0 +1,6 @@
+DOMAIN = "airnanny_local"
+CONF_PORT = "port"
+CONF_NAME = "name"
+CONF_MAC = "mac"
+MANUFACTURER = "AirNanny"
+MODEL = "A7"

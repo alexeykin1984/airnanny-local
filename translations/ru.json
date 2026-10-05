@@ -1,0 +1,88 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Настройка Бризера",
+        "data": {
+          "name": "Имя устройства (например, Саша)",
+          "mac": "MAC-адрес устройства",
+          "port": "TCP порт (по умолчанию 3001)"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Это устройство уже настроено."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Управление AirNanny",
+        "menu_options": {
+          "add_device": "Добавить новое устройство",
+          "remove_device": "Удалить устройство"
+        }
+      },
+      "add_device": {
+        "title": "Новое устройство",
+        "data": {
+          "name": "Имя",
+          "mac": "MAC-адрес",
+          "port": "Порт"
+        }
+      },
+      "remove_device": {
+        "title": "Удаление",
+        "data": {
+          "mac_to_remove": "Выберите устройство для удаления"
+        }
+      }
+    },
+    "error": {
+      "already_configured": "Это устройство (MAC) уже добавлено."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "co2": {
+        "name": "Уровень CO2"
+      }
+    },
+    "binary_sensor": {
+      "no_water": {
+        "name": "Наличие воды",
+        "state": {
+          "off": "В норме",
+          "on": "Отсутствует"
+        }
+      }
+    },
+    "switch": {
+      "night_mode": {
+        "name": "Ночной режим"
+      },
+      "damper": {
+        "name": "Заслонка"
+      }
+    },
+    "number": {
+      "fan_speed": {
+        "name": "Скорость вентилятора"
+      },
+      "humidity": {
+        "name": "Влажность в комнате"
+      }
+    },
+    "climate": {
+      "breezer": {
+        "name": "Бризер"
+      }
+    }
+  },
+  "services": {
+    "reload": {
+      "name": "AirNanny Local",
+      "description": "Принудительно закрывает все активные сокеты и перезапускает сервер опроса для всех устройств."
+    }
+  }
+}
