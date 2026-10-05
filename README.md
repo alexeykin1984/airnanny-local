@@ -58,6 +58,8 @@ Home Assistant.
 
 ## Разработка
 
+### Тесты
+
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements_test.txt
@@ -66,3 +68,11 @@ python3 -m venv .venv
 
 Тесты запускают настоящий Home Assistant и эмулятор бризера, который подключается по TCP
 (на порту 39001, чтобы не мешать работающему Home Assistant).
+
+### Выпуск версии
+
+1. Поднимите `version` в `custom_components/airnanny_local/manifest.json`.
+2. Закоммитьте и отправьте изменения, затем создайте тег с тем же номером:
+   `git tag v1.0.1 && git push origin v1.0.1`.
+
+GitHub Actions сам создаст релиз, и версия появится в HACS.

@@ -1,0 +1,28 @@
+name: Release
+
+# Тег вида v1.2.3 превращается в релиз на GitHub — по релизам HACS предлагает выбор версии
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Версия в manifest.json совпадает с тегом
+        run: |
+          version=$(python3 -c "import json; print(json.load(open('custom_components/airnanny_local/manifest.json'))['version'])")
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::В manifest.json версия $version, а тег $GITHUB_REF_NAME"
+            exit 1
+          fi
+      - name: Создать релиз
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
