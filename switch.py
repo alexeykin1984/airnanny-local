@@ -1,119 +1,51 @@
-import json
 from homeassistant.components.switch import SwitchEntity
-from homeassistant.helpers.entity import EntityCategory
-from homeassistant.util import slugify
-from .const import DOMAIN, CONF_NAME, CONF_MAC, MANUFACTURER, MODEL
+from homeassistant.const import EntityCategory
+from .entity import AirNannyEntity
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    devices = entry.data.get("devices", [entry.data])
+    hub = entry.runtime_data
     entities = []
-    for device in devices:
-        mac = device[CONF_MAC]
-        name = device[CONF_NAME]
-        entities.append(BreezerNightSwitch(mac, name, entry.entry_id))
-        entities.append(DamperSwitch(mac, name, entry.entry_id))
-    # Добавляем всё одним списком
-    if entities:
-        async_add_entities(entities)
+    for mac, name in hub.devices.items():
+        entities.append(BreezerNightSwitch(hub, mac, name, entry.entry_id))
+        entities.append(DamperSwitch(hub, mac, name, entry.entry_id))
+    async_add_entities(entities)
 
-class BreezerNightSwitch(SwitchEntity):
-    def __init__(self, mac, name, entry_id):
-        self._mac = mac
-        clean_mac = mac.replace(':', '').lower()
-        self._attr_unique_id = f"{entry_id}_{clean_mac}_night_mode"
-        self.entity_id = f"switch.night_mode_{slugify(name)}"
-        self._attr_translation_key = "night_mode"
-        self._attr_entity_category = EntityCategory.CONFIG
-        self._attr_has_entity_name = True
-        self._is_on = False
-
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, self._mac)},
-            "name": name,
-            "manufacturer": MANUFACTURER,
-            "model": MODEL,
-        }
-
-    @property
-    def is_on(self):
-        return self._is_on
+class BreezerSwitch(AirNannyEntity, SwitchEntity):
+    """Общая логика выключателей: наследники задают команду и разбор уставки."""
+    _attr_entity_category = EntityCategory.CONFIG
+    _command: str
 
     async def async_turn_on(self, **kwargs):
-        """Включение ночного режима."""
-        cmd = f'{{"id": "{self._mac}", "cmd": {{"set_night": true}}}}\n'
-        self.hass.bus.async_fire(f"{DOMAIN}_send_cmd_{self._mac}", {"cmd": cmd})
-        self._is_on = True
-        self.async_write_ha_state()
+        self._set(True)
 
     async def async_turn_off(self, **kwargs):
-        """Выключение ночного режима."""
-        cmd = f'{{"id": "{self._mac}", "cmd": {{"set_night": false}}}}\n'
-        self.hass.bus.async_fire(f"{DOMAIN}_send_cmd_{self._mac}", {"cmd": cmd})
-        self._is_on = False
+        self._set(False)
+
+    def _set(self, is_on: bool) -> None:
+        self._send(**{self._command: is_on})
+        self._attr_is_on = is_on
         self.async_write_ha_state()
 
-    async def async_added_to_hass(self):
-        """Обновление состояния из JSON."""
-        async def _update_state(event):
-            try:
-                data = event.data.get("payload")
-                setp = data.get("setp", {})
-                if setp:
-                    self._is_on = setp.get("u_night")
-                    self.async_write_ha_state()
-            except:
-                pass
-        self.async_on_remove(
-            self.hass.bus.async_listen(f"{DOMAIN}_data_{self._mac}", _update_state)
-        )
+class BreezerNightSwitch(BreezerSwitch):
+    """Ночной режим."""
+    _attr_translation_key = "night_mode"
+    _entity_id_format = "switch.night_mode_{}"
+    _command = "set_night"
 
-class DamperSwitch(SwitchEntity):
-    def __init__(self, mac, name, entry_id):
-        self._mac = mac
-        clean_mac = mac.replace(':', '').lower()
-        self._attr_unique_id = f"{entry_id}_{clean_mac}_damper"
-        self.entity_id = f"switch.damper_{slugify(name)}"
-        self._attr_entity_category = EntityCategory.CONFIG
-        self._attr_has_entity_name = True
-        self._attr_translation_key = "damper"
-        self._is_on = False
+    def _update(self, state, setp):
+        if "u_night" not in setp:
+            return False
+        self._attr_is_on = setp["u_night"]
+        return True
 
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, self._mac)},
-            "name": name,
-            "manufacturer": MANUFACTURER,
-            "model": MODEL,
-        }
+class DamperSwitch(BreezerSwitch):
+    """Заслонка."""
+    _attr_translation_key = "damper"
+    _entity_id_format = "switch.damper_{}"
+    _command = "set_damp_pos"
 
-    @property
-    def is_on(self):
-        return self._is_on
-
-    async def async_turn_on(self, **kwargs):
-        """Открыть заслонку"""
-        cmd = f'{{"id": "{self._mac}", "cmd": {{"set_damp_pos": true}}}}\n'
-        self.hass.bus.async_fire(f"{DOMAIN}_send_cmd_{self._mac}", {"cmd": cmd})
-        self._is_on = True
-        self.async_write_ha_state()
-
-    async def async_turn_off(self, **kwargs):
-        """Закрыть заслонку"""
-        cmd = f'{{"id": "{self._mac}", "cmd": {{"set_damp_pos": false}}}}\n'
-        self.hass.bus.async_fire(f"{DOMAIN}_send_cmd_{self._mac}", {"cmd": cmd})
-        self._is_on = False
-        self.async_write_ha_state()
-
-    async def async_added_to_hass(self):
-        """Обновление состояния из JSON."""
-        async def _update_state(event):
-            try:
-                data = event.data.get("payload")
-                setp = data.get("setp", {})
-                if setp:
-                    self._is_on = True if setp.get("u_damp_pos") == 2 else False
-                    self.async_write_ha_state()
-            except:
-                pass
-        self.async_on_remove(
-            self.hass.bus.async_listen(f"{DOMAIN}_data_{self._mac}", _update_state)
-        )
+    def _update(self, state, setp):
+        if "u_damp_pos" not in setp:
+            return False
+        self._attr_is_on = setp["u_damp_pos"] == 2
+        return True

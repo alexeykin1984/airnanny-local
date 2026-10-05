@@ -4,8 +4,6 @@ from homeassistant.helpers import device_registry as dr
 from .const import DOMAIN, CONF_MAC, CONF_NAME
 
 class AirNannyOptionsFlowHandler(config_entries.OptionsFlow):
-    # __init__ больше не нужен, если мы только сохраняли config_entry
-
     async def async_step_init(self, user_input=None):
         """Меню настроек."""
         return self.async_show_menu(
@@ -17,8 +15,7 @@ class AirNannyOptionsFlowHandler(config_entries.OptionsFlow):
         """Шаг добавления нового устройства."""
         errors = {}
         if user_input is not None:
-            # Используем встроенный self.config_entry
-            devices = list(self.config_entry.data.get("devices", [])).copy()
+            devices = list(self.config_entry.data.get("devices", []))
             if any(d[CONF_MAC] == user_input[CONF_MAC] for d in devices):
                 errors["base"] = "already_configured"
             else:
@@ -57,10 +54,9 @@ class AirNannyOptionsFlowHandler(config_entries.OptionsFlow):
 
             # Убираем устройство вместе с его сущностями из реестра
             device_registry = dr.async_get(self.hass)
-            if device := device_registry.async_get_device(
-                identifiers={(DOMAIN, user_input["mac_to_remove"])}
-            ):
-                device_registry.async_remove_device(device.id)
+            for device in dr.async_entries_for_config_entry(device_registry, self.config_entry.entry_id):
+                if (DOMAIN, user_input["mac_to_remove"]) in device.identifiers:
+                    device_registry.async_remove_device(device.id)
 
             # Перезагружаем, чтобы сервер перестал принимать удалённое устройство
             await self.hass.config_entries.async_reload(self.config_entry.entry_id)
