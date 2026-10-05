@@ -1,7 +1,7 @@
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.helpers import device_registry as dr
-from .const import DOMAIN, CONF_PORT, CONF_MAC, CONF_NAME
+from .const import DOMAIN, CONF_MAC, CONF_NAME
 
 class AirNannyOptionsFlowHandler(config_entries.OptionsFlow):
     # __init__ больше не нужен, если мы только сохраняли config_entry
@@ -41,7 +41,6 @@ class AirNannyOptionsFlowHandler(config_entries.OptionsFlow):
             data_schema=vol.Schema({
                 vol.Required(CONF_NAME): str,
                 vol.Required(CONF_MAC): str,
-                vol.Required(CONF_PORT, default=3001): int,
             }),
             errors=errors
         )

@@ -1,5 +1,5 @@
 DOMAIN = "airnanny_local"
-CONF_PORT = "port"
+PORT = 3001
 CONF_NAME = "name"
 CONF_MAC = "mac"
 MANUFACTURER = "AirNanny"

@@ -5,7 +5,7 @@ import logging
 from homeassistant.core import HomeAssistant
 from homeassistant.components import persistent_notification
 from homeassistant.exceptions import ConfigEntryNotReady
-from .const import DOMAIN, CONF_PORT, CONF_NAME, CONF_MAC
+from .const import DOMAIN, PORT, CONF_NAME, CONF_MAC
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = ["sensor", "climate", "switch", "number", "binary_sensor"]
@@ -176,7 +176,7 @@ async def _handle_client(hass: HomeAssistant, port, reader, writer):
         except Exception: pass
 
 async def _async_start_server(hass: HomeAssistant, port):
-    """Запускает один сервер на порт для всех устройств."""
+    """Запускает один сервер для всех устройств."""
     _LOGGER.info("Попытка запуска сервера на порту %s", port)
     server = await asyncio.start_server(partial(_handle_client, hass, port), "0.0.0.0", port)
     hass.data[DOMAIN]["servers"][port] = server
@@ -216,19 +216,14 @@ async def _async_stop_server(hass: HomeAssistant, port):
         task.cancel()
 
 async def _async_release_devices(hass: HomeAssistant, devices):
-    """Снимает регистрацию устройств и останавливает серверы, которые больше никому не нужны."""
+    """Снимает регистрацию устройств и останавливает сервер."""
     data = hass.data[DOMAIN]
     for device in devices:
-        port = device[CONF_PORT]
         data["active_macs"].pop(device[CONF_MAC], None)
         data["mac_to_name"].pop(device[CONF_MAC], None)
-        data["entry_counts"][port] -= 1
 
-        # Если это последнее устройство на порту — закрываем сервер
-        if data["entry_counts"][port] <= 0:
-            data["entry_counts"].pop(port)
-            if port in data["servers"]:
-                await _async_stop_server(hass, port)
+    if PORT in data["servers"]:
+        await _async_stop_server(hass, PORT)
 
 async def async_setup_entry(hass: HomeAssistant, entry):
     """Настройка экземпляра интеграции."""
@@ -239,7 +234,6 @@ async def async_setup_entry(hass: HomeAssistant, entry):
     hass.data[DOMAIN].setdefault("servers", {})
     hass.data[DOMAIN].setdefault("server_tasks", {})
     hass.data[DOMAIN].setdefault("stop_unsubs", {})
-    hass.data[DOMAIN].setdefault("entry_counts", {})
     hass.data[DOMAIN].setdefault("active_macs", {}) # Здесь храним список разрешенных MAC
     hass.data[DOMAIN].setdefault("notified_macs", set())
     hass.data[DOMAIN].setdefault("active_connections", {})
@@ -265,25 +259,20 @@ async def async_setup_entry(hass: HomeAssistant, entry):
     for device in devices:
         mac = device[CONF_MAC]
         name = device[CONF_NAME]
-        port = device[CONF_PORT]
 
         # Регистрируем MAC текущей интеграции в глобальном списке разрешенных
         hass.data[DOMAIN]["active_macs"][mac] = entry.entry_id
-        hass.data[DOMAIN]["entry_counts"][port] = hass.data[DOMAIN]["entry_counts"].get(port, 0) + 1
         # Запоминаем соответствие MAC -> Имя
         hass.data[DOMAIN]["mac_to_name"][mac] = name
 
-    # Запускаем по одному серверу на каждый порт
+    # Запускаем один сервер для всех устройств
     try:
-        for port in {device[CONF_PORT] for device in devices}:
-            if port not in hass.data[DOMAIN]["servers"]:
-                await _async_start_server(hass, port)
-            else:
-                _LOGGER.debug("Сервер на порту %s уже запущен, используем существующий", port)
+        if PORT not in hass.data[DOMAIN]["servers"]:
+            await _async_start_server(hass, PORT)
     except OSError as e:
         # Откатываем регистрацию, чтобы повторная попытка началась с чистого листа
         await _async_release_devices(hass, hass.data[DOMAIN]["entry_devices"].pop(entry.entry_id))
-        raise ConfigEntryNotReady(f"Не удалось запустить сервер на порту {port}: {e}") from e
+        raise ConfigEntryNotReady(f"Не удалось запустить сервер на порту {PORT}: {e}") from e
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True

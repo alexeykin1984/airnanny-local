@@ -2,7 +2,7 @@ from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
 import json
 from homeassistant.util import slugify
 import logging
-from .const import DOMAIN, CONF_PORT, CONF_NAME, CONF_MAC, MANUFACTURER, MODEL
+from .const import DOMAIN, CONF_NAME, CONF_MAC, MANUFACTURER, MODEL
 
 _LOGGER = logging.getLogger(__name__)
 

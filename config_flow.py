@@ -2,7 +2,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 from .options_flow import AirNannyOptionsFlowHandler
-from .const import DOMAIN, CONF_PORT, CONF_NAME, CONF_MAC
+from .const import DOMAIN, CONF_NAME, CONF_MAC
 
 class SocketConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
@@ -22,7 +22,6 @@ class SocketConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema({
                 vol.Required(CONF_NAME, default='Саша'): str,
                 vol.Required(CONF_MAC, default='1C:9D:C2:EC:2E:BC:0'): str,
-                vol.Required(CONF_PORT, default=3001): int,
             }),
             errors=errors
         )
