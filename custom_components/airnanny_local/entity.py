@@ -10,6 +10,10 @@ from .hub import AirNannyHub, signal_available, signal_data
 
 _LOGGER = logging.getLogger(__name__)
 
+def build_unique_id(entry_id: str, mac: str, suffix: str) -> str:
+    clean_mac = mac.replace(':', '').lower()
+    return f"{entry_id}_{clean_mac}_{suffix}"
+
 class AirNannyEntity(Entity):
     _attr_has_entity_name = True
     _attr_should_poll = False
@@ -21,9 +25,8 @@ class AirNannyEntity(Entity):
     def __init__(self, hub: AirNannyHub, mac: str, name: str, entry_id: str) -> None:
         self._hub = hub
         self._mac = mac
-        clean_mac = mac.replace(':', '').lower()
         suffix = self._unique_id_suffix or self._attr_translation_key
-        self._attr_unique_id = f"{entry_id}_{clean_mac}_{suffix}"
+        self._attr_unique_id = build_unique_id(entry_id, mac, suffix)
         self.entity_id = self._entity_id_format.format(slugify(name))
         # Привязка к общему устройству
         self._attr_device_info = DeviceInfo(

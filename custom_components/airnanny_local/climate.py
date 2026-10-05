@@ -16,7 +16,12 @@ class BreezerClimate(AirNannyEntity, ClimateEntity):
     # Настройки климата
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_hvac_modes = [HVACMode.OFF, HVACMode.FAN_ONLY, HVACMode.AUTO]
-    _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE
+    _attr_supported_features = (
+        ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.FAN_MODE
+    )
+    # Скорости вентилятора: 0-6
+    _attr_fan_modes = [str(speed) for speed in range(7)]
+    _attr_fan_mode = None
     # Режим неизвестен, пока устройство не пришлёт уставки
     _attr_hvac_mode = None
 
@@ -46,12 +51,20 @@ class BreezerClimate(AirNannyEntity, ClimateEntity):
         if "hum_room" in state:
             self._attr_current_humidity = state["hum_room"]
             changed = True
+        if "fan_speed" in state:
+            self._attr_fan_mode = str(state["fan_speed"])
+            changed = True
 
         return changed
 
     async def async_set_hvac_mode(self, hvac_mode):
         self._send(set_auto=hvac_mode == HVACMode.AUTO)
         self._send(set_pwr_on=hvac_mode != HVACMode.OFF)
+
+    async def async_set_fan_mode(self, fan_mode):
+        self._send(set_fan_speed=int(fan_mode))
+        self._attr_fan_mode = fan_mode
+        self.async_write_ha_state()
 
     async def async_set_temperature(self, **kwargs):
         if (temp := kwargs.get(ATTR_TEMPERATURE)) is None:

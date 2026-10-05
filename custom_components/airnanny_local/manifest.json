@@ -1,7 +1,7 @@
 {
   "domain": "airnanny_local",
   "name": "AirNanny Local Integration",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "documentation": "",
   "config_flow": true,
   "dependencies": [],
