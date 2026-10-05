@@ -1,12 +1,15 @@
 {
   "domain": "airnanny_local",
   "name": "AirNanny Local Integration",
-  "version": "2.2.0",
-  "documentation": "",
+  "codeowners": [
+    "@alexeykin1984"
+  ],
   "config_flow": true,
   "dependencies": [],
-  "codeowners": [],
-  "iot_class": "local_push",
+  "documentation": "https://github.com/alexeykin1984/airnanny-local",
   "integration_type": "hub",
-  "single_config_entry": true
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/alexeykin1984/airnanny-local/issues",
+  "single_config_entry": true,
+  "version": "2.2.0"
 }
