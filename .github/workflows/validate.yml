@@ -15,8 +15,6 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
-          # Интеграции нет в home-assistant/brands (нет логотипа)
-          ignore: brands
 
   hassfest:
     name: Hassfest
