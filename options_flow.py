@@ -1,5 +1,6 @@
 import voluptuous as vol
 from homeassistant import config_entries
+from homeassistant.helpers import device_registry as dr
 from .const import DOMAIN, CONF_PORT, CONF_MAC, CONF_NAME
 
 class AirNannyOptionsFlowHandler(config_entries.OptionsFlow):
@@ -54,6 +55,16 @@ class AirNannyOptionsFlowHandler(config_entries.OptionsFlow):
             self.hass.config_entries.async_update_entry(
                 self.config_entry, data={**self.config_entry.data, "devices": new_devices}
             )
+
+            # Убираем устройство вместе с его сущностями из реестра
+            device_registry = dr.async_get(self.hass)
+            if device := device_registry.async_get_device(
+                identifiers={(DOMAIN, user_input["mac_to_remove"])}
+            ):
+                device_registry.async_remove_device(device.id)
+
+            # Перезагружаем, чтобы сервер перестал принимать удалённое устройство
+            await self.hass.config_entries.async_reload(self.config_entry.entry_id)
             return self.async_create_entry(title="", data={})
 
         device_options = {d[CONF_MAC]: f"{d[CONF_NAME]} [{d[CONF_MAC]}]" for d in devices}

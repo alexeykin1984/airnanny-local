@@ -50,4 +50,6 @@ class CO2Sensor(SensorEntity):
             except Exception as e:
                 _LOGGER.error("Error CO2Sensor data: %s", e)
                 pass
-        self.hass.bus.async_listen(f"{DOMAIN}_data_{self._mac}", _update_state)
+        self.async_on_remove(
+            self.hass.bus.async_listen(f"{DOMAIN}_data_{self._mac}", _update_state)
+        )

@@ -63,7 +63,9 @@ class BreezerNightSwitch(SwitchEntity):
                     self.async_write_ha_state()
             except:
                 pass
-        self.hass.bus.async_listen(f"{DOMAIN}_data_{self._mac}", _update_state)
+        self.async_on_remove(
+            self.hass.bus.async_listen(f"{DOMAIN}_data_{self._mac}", _update_state)
+        )
 
 class DamperSwitch(SwitchEntity):
     def __init__(self, mac, name, entry_id):
@@ -112,4 +114,6 @@ class DamperSwitch(SwitchEntity):
                     self.async_write_ha_state()
             except:
                 pass
-        self.hass.bus.async_listen(f"{DOMAIN}_data_{self._mac}", _update_state)
+        self.async_on_remove(
+            self.hass.bus.async_listen(f"{DOMAIN}_data_{self._mac}", _update_state)
+        )

@@ -53,9 +53,12 @@ class NoWaterSensor(BinarySensorEntity):
                 data = event.data.get("payload")
                 state = data.get("state", {})
                 # В JSON 'no_water': True означает, что воды НЕТ
-                self._is_on = state.get("no_water", False)
-                self.async_write_ha_state()
+                if "no_water" in state:
+                    self._is_on = state["no_water"]
+                    self.async_write_ha_state()
             except Exception as e:
                 _LOGGER.error("Error No Water data: %s", e)
                 pass
-        self.hass.bus.async_listen(f"{DOMAIN}_data_{self._mac}", _update_state)
+        self.async_on_remove(
+            self.hass.bus.async_listen(f"{DOMAIN}_data_{self._mac}", _update_state)
+        )

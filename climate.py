@@ -69,24 +69,30 @@ class BreezerClimate(ClimateEntity):
                     _LOGGER.debug("Received setp = %s", setp)
                     is_auto = setp.get("u_auto")
                     is_off = not setp.get("u_pwr_on")
-                    self._target_temp = setp.get("u_temp_room", 0) / 10
+                    if "u_temp_room" in setp:
+                        self._target_temp = setp["u_temp_room"] / 10
                     if is_off:
                         self._hvac_mode = HVACMode.OFF
                     elif is_auto:
                         self._hvac_mode = HVACMode.AUTO
                     else:
                         self._hvac_mode = HVACMode.FAN_ONLY
-                else:
+                elif state:
                     _LOGGER.debug("Received state = %s", state)
-                    self._current_temp = state.get("temp_in", 0) / 10
-                    self._current_hum = state.get("hum_room", 0)
-
+                    if "temp_in" in state:
+                        self._current_temp = state["temp_in"] / 10
+                    if "hum_room" in state:
+                        self._current_hum = state["hum_room"]
+                else:
+                    return
 
                 self.async_write_ha_state()
             except Exception as e:
                 _LOGGER.error("Ошибка парсинга климата: %s", e)
 
-        self.hass.bus.async_listen(f"{DOMAIN}_data_{self._mac}", _update_state)
+        self.async_on_remove(
+            self.hass.bus.async_listen(f"{DOMAIN}_data_{self._mac}", _update_state)
+        )
 
     async def async_set_hvac_mode(self, hvac_mode):
         is_auto = "true" if hvac_mode == HVACMode.AUTO else "false"
@@ -101,5 +107,5 @@ class BreezerClimate(ClimateEntity):
     async def async_set_temperature(self, **kwargs):
         if (temp := kwargs.get("temperature")) is None:
             return
-        cmd = f'{{"id": "{self._mac}", "cmd": {{"set_temp_room": {temp*10}}}}}\n'
+        cmd = f'{{"id": "{self._mac}", "cmd": {{"set_temp_room": {round(temp * 10)}}}}}\n'
         self.hass.bus.async_fire(f"{DOMAIN}_send_cmd_{self._mac}", {"cmd": cmd})
