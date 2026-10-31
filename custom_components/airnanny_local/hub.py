@@ -6,7 +6,7 @@ from homeassistant.components import persistent_notification
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.dispatcher import async_dispatcher_send
-from .const import DOMAIN, PORT, POLL_INTERVAL
+from .const import DOMAIN, PORT, POLL_INTERVAL, READ_TIMEOUT
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,7 +44,15 @@ def _extract_messages(buffer: str):
 async def _read_messages(reader: asyncio.StreamReader):
     """Выдаёт JSON-сообщения из сокета, пока устройство не отключится."""
     buffer = ""
-    while chunk := await reader.read(1024):
+    while True:
+        try:
+            # Без таймаута обрыв Wi-Fi замечается только через часы — по таймауту TCP
+            chunk = await asyncio.wait_for(reader.read(1024), READ_TIMEOUT)
+        except TimeoutError:
+            _LOGGER.warning("Нет данных %s с, соединение закрыто", READ_TIMEOUT)
+            return
+        if not chunk:
+            return
         buffer += chunk.decode("utf-8", errors="ignore")
         messages, buffer = _extract_messages(buffer)
         for message in messages:

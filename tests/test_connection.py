@@ -60,6 +60,15 @@ async def test_disconnect_and_reconnect(hass, breezer):
     again.close()
 
 
+async def test_silent_connection_is_closed(hass, breezer, monkeypatch):
+    """Бризер пропал из Wi-Fi без закрытия сокета: по таймауту тишины соединение закрывается."""
+    monkeypatch.setattr("custom_components.airnanny_local.hub.READ_TIMEOUT", 0.3)
+    # Новый таймаут действует со следующего чтения — одно сообщение, чтобы его начать
+    await breezer.send(b'{"state":{"co2_ppm":600}}\n')
+    assert await breezer.closed()
+    await until(hass, lambda: state_of(hass, "sensor.co2_sasha") == "unavailable", "отключение по таймауту")
+
+
 async def test_second_connection_replaces_first(hass, breezer):
     """Бризер переподключился, не закрыв старый сокет: старый закрываем, сущности остаются доступны."""
     second = await Breezer().connect()
