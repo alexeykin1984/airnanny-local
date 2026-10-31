@@ -10,6 +10,7 @@ def _environment(enable_custom_integrations, socket_enabled, monkeypatch):
     monkeypatch.setattr("custom_components.airnanny_local.hub.PORT", PORT)
     monkeypatch.setattr("custom_components.airnanny_local.hub.POLL_INTERVAL", 0.2)
     monkeypatch.setattr("custom_components.airnanny_local.hub.READ_TIMEOUT", 5)
+    monkeypatch.setattr("custom_components.airnanny_local.hub.SETP_INTERVAL", 0.5)
 
 
 @pytest.fixture

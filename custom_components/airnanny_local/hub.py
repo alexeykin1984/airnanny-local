@@ -6,7 +6,7 @@ from homeassistant.components import persistent_notification
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.dispatcher import async_dispatcher_send
-from .const import DOMAIN, PORT, POLL_INTERVAL, READ_TIMEOUT
+from .const import DOMAIN, PORT, POLL_INTERVAL, READ_TIMEOUT, SETP_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -164,11 +164,15 @@ class AirNannyHub:
             _LOGGER.info("Device %s is disconnected", name)
 
     async def _poll(self, mac: str, writer: asyncio.StreamWriter) -> None:
-        """Один раз запрашивает уставки, затем периодически — состояние."""
+        """Периодически запрашивает состояние, а уставки — реже."""
+        loop = asyncio.get_running_loop()
         try:
             await asyncio.sleep(0.5)
-            _write(writer, {"id": mac, "cmd": {"get_setp": True}})
+            next_setp = loop.time()
             while not writer.transport.is_closing():
+                if loop.time() >= next_setp:
+                    _write(writer, {"id": mac, "cmd": {"get_setp": True}})
+                    next_setp = loop.time() + SETP_INTERVAL
                 _write(writer, {"id": mac, "cmd": {"get_state": True}})
                 await writer.drain()
                 await asyncio.sleep(POLL_INTERVAL)

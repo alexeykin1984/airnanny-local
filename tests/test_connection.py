@@ -28,8 +28,9 @@ async def test_handshake(hass, entry):
     assert await breezer.line() == {"hello": True, "id": MAC, "time": "123", "time_zone": "-00:00"}
     assert await breezer.line() == {"id": MAC, "cmd": {"get_setp": True}}
     assert await breezer.line() == {"id": MAC, "cmd": {"get_state": True}}
-    # Опрос повторяется
-    assert await breezer.line() == {"id": MAC, "cmd": {"get_state": True}}
+    # Опрос повторяется, уставки перезапрашиваются реже
+    commands = [(await breezer.line())["cmd"] for _ in range(12)]
+    assert 1 <= commands.count({"get_setp": True}) < commands.count({"get_state": True})
     breezer.close()
 
 
